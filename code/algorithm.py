@@ -13,6 +13,7 @@
 
 # import basic packages
 import numpy as np
+import random
 
 # basic numpy configuration
 
@@ -80,9 +81,69 @@ def propagation_and_random_search(source_patches, target_patches,
     #############################################
     ###  PLACE YOUR CODE BETWEEN THESE LINES  ###
     #############################################
+    source_patches = np.nan_to_num(source_patches)
+    target_patches = np.nan_to_num(target_patches)
+    row = source_patches.shape[0]
+    column = source_patches.shape[1]
+    w = np.array([row, column])
+    source_index = make_coordinates_matrix(source_patches.shape)
     # Propagation
-    
+    # if propagation_enabled:
+    #     target_index = make_coordinates_matrix(target.shape) + f r
+    #     if odd_iteration:
+    #             target_patch = target_patches[target_index[:,:,0], target_index[:,:,1]]
+    #     else:
+    # Random Search
+    if True:
+        i = 0
+        cur_R = np.array([random.uniform(-1, 1), random.uniform(-1, 1)])
+        while(w[0] * alpha ** i >= 1 and w[1] * alpha ** i >= 1):
+            i += 1;
+        random_search_counter = i+1
+        random_search_offset = np.zeros([row, column, random_search_counter, 2]).astype(int)
+        source_index_set = np.repeat(source_index.reshape(row,column,1,2), random_search_counter, axis = 2)
+        random_search_offset[:,:,0,:] = new_f
+        i = 1
+        while(i < random_search_counter):
+            temp_f = (new_f + w * alpha ** i * cur_R).astype(int)
+            # target_index = temp_f + source_index
+            # x = np.clip(target_index[:,:,0], 0, row-1)
+            # y = np.clip(target_index[:,:,1], 0, column-1)
+            random_search_offset[:,:,i,:] = temp_f
+            # if i ==0:
+            #     target_index = np.dstack((x,y))
+            # if i ==1:
+            #     target_index = np.dstack((x,y))
+            # np.append(u, f + w * alpha ** i * cur_R)
+            # cur_R = [uniform_randint_range[random.randint(0, 1)], uniform_randint_range[random.randint(0, 1)]]
+            i += 1
+        # x = random_search_index_set[:,:,0,:][:,:,0]
+        # y = random_search_index_set[:,:,0,:][:,:,1]
+        # print x.dtype
+        # print y.dtype
+        # print source_patches[x,y]
 
+        target_index_set = source_index_set + random_search_offset
+        target_index_set[:,:,:,0] = np.clip(target_index_set[:,:,:,0], 0, row-1)
+        target_index_set[:,:,:,1] = np.clip(target_index_set[:,:,:,1], 0, column-1)
+        
+        source_x = source_index_set[:,:,:,0]
+        source_y = source_index_set[:,:,:,1]  
+        target_x = target_index_set[:,:,:,0]
+        target_y = target_index_set[:,:,:,1]
+        source_patches_value = source_patches[source_x,source_y]
+        target_patches_value = target_patches[target_x,target_y]
+        x = source_patches_value - target_patches_value
+        #print (source_patches_value - target_patches_value).shape
+        # D = np.sum((source_patches_value - target_patches_value) **2, axis = 2)
+
+        #print source_patches.shape
+        # i = 1
+        # while(i < random_search_counter):
+        #     x = random_search_index_set[:,:,i,:][:,:,0]
+        #     y = random_search_index_set[:,:,i,:][:,:,1]
+        #     #print source_patches[x,y].shape
+        #     break
     #############################################
 
     return new_f, best_D, global_vars
