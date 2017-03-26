@@ -81,46 +81,92 @@ def propagation_and_random_search(source_patches, target_patches,
     #############################################
     ###  PLACE YOUR CODE BETWEEN THESE LINES  ###
     #############################################
-    random_enabled = True
-    propagation_enabled = True
     row = source_patches.shape[0]
     column = source_patches.shape[1]
-    w = np.array([row, column])
-    source_patches = np.nan_to_num(source_patches)
-    target_patches = np.nan_to_num(target_patches)
-    source_index = make_coordinates_matrix(source_patches.shape)
-    old_x = np.clip((source_index + new_f)[:,:,0],0,row-1)
-    old_y = np.clip((source_index + new_f)[:,:,1],0,column-1)
-    old_patches = target_patches[old_x, old_y]
-    D = np.sum(np.sum((old_patches - source_patches)**2, axis = 3), axis = 2)
 
-    # Propagation
-    if propagation_enabled:
-        if odd_iteration:
-            for i in range(0,row):
-                for j in range(0,column):
+    i = 0
+    while(w * alpha ** i >= 1):
+                i += 1
+    while_iters = i
+
+    # initialize array_for_random_offset to accelerate comparison in random search 
+    array_for_random_offset = np.zeros((while_iters+1,2)).astype(int)
+
+    # store search radius in array_for_random_offset, first spot is center of the search region 
+    i = 1
+    while(i < while_iters+1):
+            cur_R = np.array([random.uniform(-1, 1), random.uniform(-1, 1)])
+            array_for_random_offset[i,:] = w * alpha ** i * cur_R
+            i +=1
+
+    # initialize algorithm properties
+    random_enabled = True
+    propagation_enabled = True
+    source_patches = np.nan_to_num(source_patches)
+    target_patches = np.nan_to_num(target_patches)    
+
+    # make ordered index of the image
+    source_index = make_coordinates_matrix(source_patches.shape)
+
+    # varible whose name includes 'window' stores the array of pixels we need to compare      
+    # Scan from left to right, top to left
+    if odd_iteration:
+        for i in range(0,row):
+            for j in range(0,column):
+                # Propogation
+                if propagation_enabled:
+                    # if first pixel of the image, nothing to compare with
                     if(i==0 and j==0):
                         break
+                    # if pixles in the first row of the image, only compare to its left
                     elif(i==0):
                         source_window_index = np.asarray((source_index[i,j-1],source_index[i,j]))
                         window_f = np.asarray((new_f[i,j-1],new_f[i,j]))
+                    # if pixles in the first column of the image, only compare to its top
                     elif(j==0):
                         source_window_index = np.asarray((source_index[i-1,j],source_index[i,j]))
                         window_f = np.asarray((new_f[i-1,j],new_f[i,j]))
+                    # compare to the one above and the one on the left
                     else:
                         source_window_index = np.asarray((source_index[i,j-1],source_index[i-1,j],source_index[i,j]))
                         window_f = np.asarray((new_f[i,j-1],new_f[i-1,j],new_f[i,j]))
                     target_window_index = source_window_index + window_f
+                    # clip the index afte adding offset to its boundaries
                     target_window_x = np.clip(target_window_index[:,0],0,row-1)
                     target_window_y = np.clip(target_window_index[:,1],0,column-1)
                     source_window = source_patches[source_window_index[:,0],source_window_index[:,1]]
                     target_window = target_patches[target_window_x,target_window_y]
+                    # calculate the difference in density of those pixels
                     window_D = np.sum(np.sum((target_window - source_window)**2, axis = 2), axis = 1)
+                    # update the offset per pixel if better result is found
                     min_index = np.argmin(window_D)
                     new_f[i,j] = window_f[min_index]
-        else:
-            for i in range(row-1,0,-1):
-                for j in range(column-1,0,-1):
+        
+                # Random Search
+                if random_enabled:
+                    # populate the offset array for comparison
+                    source_window_index = np.repeat(source_index[i,j].reshape((1,2)), while_iters+1,axis=0)
+                    window_f = array_for_random_offset + new_f[i,j]
+                    # clip the index afte adding offset to its boundaries
+                    target_window_x = np.clip((source_window_index + window_f)[:,0],0,row-1)
+                    target_window_y = np.clip((source_window_index + window_f)[:,1],0,column-1)
+                    # correct the offset array such that after adding offset no pixels will potentially cross the 
+                    # boundaries
+                    window_f[:,0] = target_window_x - source_window_index[:,0]
+                    window_f[:,1] = target_window_y - source_window_index[:,1]
+                    source_window = source_patches[source_window_index[:,0],source_window_index[:,1]]
+                    target_window = target_patches[target_window_x,target_window_y]
+                    # calculate the difference in density of those pixels
+                    window_D = np.sum(np.sum((target_window - source_window)**2, axis = 2), axis = 1)
+                    # update the offset per pixel if better result is found
+                    min_index = np.argmin(window_D)
+                    new_f[i,j] = window_f[min_index]
+    # Scan in reversed order and pixel picked for comparison in propogation is the one below and the one on the right
+    # the rest has similar structure as above, so comments omitted
+    else:
+        for i in range(row-1,-1,-1):
+            for j in range(column-1,-1,-1):
+                if propagation_enabled:
                     if(i==row-1 and j==column-1):
                         break
                     elif(i==row-1):
@@ -141,28 +187,19 @@ def propagation_and_random_search(source_patches, target_patches,
                     min_index = np.argmin(window_D)
                     new_f[i,j] = window_f[min_index]
 
-    # Random Search
-    if random_enabled:
-        i = 0
-        cur_R = np.array([random.uniform(-1, 1), random.uniform(-1, 1)])
-        while(w[0] * alpha ** i >= 1 and w[1] * alpha ** i >= 1):
-            temp_f = (new_f + w * alpha ** i * cur_R).astype(int)
-            temp_target_x = np.clip((source_index + temp_f)[:,:,0],0,row-1)
-            temp_target_y = np.clip((source_index + temp_f)[:,:,1],0,column-1)
-            temp_f[:,:,0] = temp_target_x - source_index[:,:,0]
-            temp_f[:,:,1] = temp_target_y - source_index[:,:,1]
-            temp_target_patches = target_patches[temp_target_x, temp_target_y]
-            temp_D = np.sum(np.sum((temp_target_patches - source_patches)**2, axis=3), axis=2)
-            difference = temp_D - D
-            new_f[np.where(difference<0)] = temp_f[np.where(difference<0)]
-            old_x = np.clip((source_index + new_f)[:,:,0],0,row-1)
-            old_y = np.clip((source_index + new_f)[:,:,1],0,column-1)
-            old_patches = target_patches[old_x, old_y]
-            D = np.sum(np.sum((old_patches - source_patches)**2, axis = 3), axis = 2)
-            cur_R = np.array([random.uniform(-1, 1), random.uniform(-1, 1)])
-            i += 1;
-
-    best_D = D
+                if random_enabled:
+                    source_window_index = np.repeat(source_index[i,j].reshape((1,2)), while_iters+1,axis=0)
+                    window_f = array_for_random_offset + new_f[i,j]
+                    target_window_x = np.clip((source_window_index + window_f)[:,0],0,row-1)
+                    target_window_y = np.clip((source_window_index + window_f)[:,1],0,column-1)
+                    window_f[:,0] = target_window_x - source_window_index[:,0]
+                    window_f[:,1] = target_window_y - source_window_index[:,1]
+                    source_window = source_patches[source_window_index[:,0],source_window_index[:,1]]
+                    target_window = target_patches[target_window_x,target_window_y]
+                    window_D = np.sum(np.sum((target_window - source_window)**2, axis = 2), axis = 1)
+                    min_index = np.argmin(window_D)
+                    new_f[i,j] = window_f[min_index]
+                    
     #############################################
 
     return new_f, best_D, global_vars
