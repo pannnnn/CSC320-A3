@@ -56,5 +56,5 @@ python viscomp.py --source ../test_images/jaguar2/source.png --target ../test_im
 
 # jaguar3
 python viscomp.py --source ../test_images/jaguar3/source.png --target ../test_images/jaguar3/target.png --nnf-image --nnf-vectors --iters 0 --output ../results/jaguar3/jaguar3
-mv ../results/jaguar/jaguar.*.npy ../results/jaguar/jaguar.init.npy
+mv ../results/jaguar3/jaguar3.*.npy ../results/jaguar3/jaguar3.init.npy
 python viscomp.py --source ../test_images/jaguar3/source.png --target ../test_images/jaguar3/target.png --init-nnf ../results/jaguar3/jaguar3.init.npy -iters 5 --partial-results --nnf-image --nnf-vectors --rec-source --output ../test_images/jaguar3/jaguar3
