@@ -84,6 +84,7 @@ def propagation_and_random_search(source_patches, target_patches,
     row = source_patches.shape[0]
     column = source_patches.shape[1]
 
+    # calculate how many random search offset we need
     i = 0
     while(w * alpha ** i >= 1):
                 i += 1
@@ -110,9 +111,11 @@ def propagation_and_random_search(source_patches, target_patches,
     source_index = make_coordinates_matrix(source_patches.shape)
 
     # varible whose name includes 'window' stores the array of pixels we need to compare      
-    # Scan from left to right, top to left
+    # scan along the width and then the height, all pixels in each diagonal is manipulated
+    # in one single loop
     if odd_iteration:
         for i in range(column+row-1):
+            # calculate diagonal index
             if(i<column):
                 diagonal_length = min(i+1,row)
                 x = np.arange(i, max(-1, i-row), -1)
@@ -130,30 +133,34 @@ def propagation_and_random_search(source_patches, target_patches,
                 if(i==0):
                     continue
 
+                # calculate left neighbor index
                 left_neighbor_index = np.copy(diagonal_index)
                 left_neighbor_index[:,0] = diagonal_index[:,0]-1
                 temp = left_neighbor_index[:,0]
                 temp[temp<0] = 0
                 left_neighbor_index[:,0] = temp
 
+                # calculate top neighbor index
                 top_neighbor_index = np.copy(diagonal_index)
                 top_neighbor_index[:,1] = diagonal_index[:,1]-1
                 temp = top_neighbor_index[:,1]
                 temp[temp<0] = 0
                 top_neighbor_index[:,1] = temp
 
+                # initialize source image and target image index for density calculation
                 source_window_index = np.stack((diagonal_index, top_neighbor_index, left_neighbor_index), axis = 1)
                 window_f = new_f[source_window_index[:,:,0],source_window_index[:,:,1]]
-
                 target_window_index = source_window_index + window_f
+                
                 # clip the index afte adding offset to its boundaries
                 target_window_x = np.clip(target_window_index[:,:,0],0,row-1)
                 target_window_y = np.clip(target_window_index[:,:,1],0,column-1)
                 source_window = source_patches[source_window_index[:,:,0],source_window_index[:,:,1]]
                 target_window = target_patches[target_window_x,target_window_y]
+
                 # calculate the difference in density of those pixels
                 window_D = np.sum(np.sum((target_window - source_window)**2, axis = 3), axis = 2)
-                # print window_D
+
                 # update the offset per pixel if better result is found
                 min_index = np.argmin(window_D,axis=1)
                 x = source_window_index[:,0,0]
@@ -182,8 +189,10 @@ def propagation_and_random_search(source_patches, target_patches,
                 x = source_window_index[:,0,0]
                 y = source_window_index[:,0,1]
                 new_f[x, y] = window_f[np.arange(diagonal_length),min_index]
+    # scan in reversed order
     else:
         for i in range(column+row-2,-1,-1):
+            # calculate diagonal index
             if(i<column):
                 diagonal_length = min(i+1,row)
                 x = np.arange(i, max(-1, i-row), -1)
@@ -197,33 +206,38 @@ def propagation_and_random_search(source_patches, target_patches,
 
             # Propogation
             if propagation_enabled:
-                # if first pixel of the image, nothing to compare with
+                # if last pixel of the image, nothing to compare with
                 if(i==column+row-2):
                     continue
 
+                # calculate right neighbor index
                 right_neighbor_index = np.copy(diagonal_index)
                 right_neighbor_index[:,0] = diagonal_index[:,0]+1
                 temp = right_neighbor_index[:,0]
                 temp[temp>=row] = row-1
                 right_neighbor_index[:,0] = temp
 
+                # calculate bottom neighbor index
                 bottom_neighbor_index = np.copy(diagonal_index)
                 bottom_neighbor_index[:,1] = diagonal_index[:,1]+1
                 temp = bottom_neighbor_index[:,1]
                 temp[temp>=column] = column-1
                 bottom_neighbor_index[:,1] = temp
 
+                # initialize source image and target image index for density calculation
                 source_window_index = np.stack((diagonal_index, bottom_neighbor_index, right_neighbor_index), axis = 1)
                 window_f = new_f[source_window_index[:,:,0],source_window_index[:,:,1]]
-
                 target_window_index = source_window_index + window_f
+
                 # clip the index afte adding offset to its boundaries
                 target_window_x = np.clip(target_window_index[:,:,0],0,row-1)
                 target_window_y = np.clip(target_window_index[:,:,1],0,column-1)
                 source_window = source_patches[source_window_index[:,:,0],source_window_index[:,:,1]]
                 target_window = target_patches[target_window_x,target_window_y]
+
                 # calculate the difference in density of those pixels
                 window_D = np.sum(np.sum((target_window - source_window)**2, axis = 3), axis = 2)
+                
                 # update the offset per pixel if better result is found
                 min_index = np.argmin(window_D,axis=1)
                 x = source_window_index[:,0,0]
