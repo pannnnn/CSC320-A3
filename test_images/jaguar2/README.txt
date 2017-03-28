@@ -58,3 +58,13 @@ python viscomp.py --source ../test_images/jaguar2/source.png --target ../test_im
 python viscomp.py --source ../test_images/jaguar3/source.png --target ../test_images/jaguar3/target.png --nnf-image --nnf-vectors --iters 0 --output ../results/jaguar3/jaguar3
 mv ../results/jaguar3/jaguar3.*.npy ../results/jaguar3/jaguar3.init.npy
 python viscomp.py --source ../test_images/jaguar3/source.png --target ../test_images/jaguar3/target.png --init-nnf ../results/jaguar3/jaguar3.init.npy -iters 5 --partial-results --nnf-image --nnf-vectors --rec-source --output ../test_images/jaguar3/jaguar3
+
+# woman
+python viscomp.py --source ../test_images/woman/source.png --target ../test_images/woman/target.png --nnf-image --nnf-vectors --iters 0 --output ../results/woman/woman
+mv ../results/woman/woman.*.npy ../results/woman/woman.init.npy
+python viscomp.py --source ../test_images/woman/source.png --target ../test_images/woman/target.png --init-nnf ../results/woman/woman.init.npy -iters 5 --partial-results --nnf-image --nnf-vectors --rec-source --output ../test_images/woman/woman
+
+# spiderman
+python viscomp.py --source ../test_images/spiderman/source.png --target ../test_images/spiderman/target.png --nnf-image --nnf-vectors --iters 0 --output ../results/spiderman/spiderman
+mv ../results/spiderman/spiderman.*.npy ../results/spiderman/spiderman.init.npy
+python viscomp.py --source ../test_images/spiderman/source.png --target ../test_images/spiderman/target.png --init-nnf ../results/spiderman/spiderman.init.npy -iters 5 --partial-results --nnf-image --nnf-vectors --rec-source --output ../test_images/spiderman/spiderman
