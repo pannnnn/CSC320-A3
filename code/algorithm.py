@@ -93,14 +93,6 @@ def propagation_and_random_search(source_patches, target_patches,
     # initialize array_for_random_offset to accelerate comparison in random search 
     array_for_random_offset = np.zeros((1,while_iters+1,2)).astype(int)
 
-    # store search radius in array_for_random_offset, first spot is center of the search region 
-    i = 1
-    while(i < while_iters+1):
-            cur_R = np.array([random.uniform(-1, 1), random.uniform(-1, 1)])
-            array_for_random_offset[0,i,:] = w * alpha ** i * cur_R
-            i +=1
-
-    # print array_for_random_offset.shape
     # initialize algorithm properties
     random_enabled = True
     propagation_enabled = True
@@ -169,6 +161,13 @@ def propagation_and_random_search(source_patches, target_patches,
 
             # Random Search
             if random_enabled:
+                # store search radius in array_for_random_offset, first spot is center of the search region 
+                j = 1
+                while(j < while_iters+1):
+                        cur_R = np.array([random.uniform(-1, 1), random.uniform(-1, 1)])
+                        array_for_random_offset[0,j,:] = w * alpha ** j * cur_R
+                        j +=1
+
                 # populate the offset array for comparison
                 source_window_index = np.repeat(diagonal_index.reshape(diagonal_length,1,2), while_iters+1, axis = 1)
                 random_offset = np.repeat(array_for_random_offset, diagonal_length, axis=0)          
@@ -246,6 +245,13 @@ def propagation_and_random_search(source_patches, target_patches,
 
             # Random Search
             if random_enabled:
+                # store search radius in array_for_random_offset, first spot is center of the search region 
+                j = 1
+                while(j < while_iters+1):
+                        cur_R = np.array([random.uniform(-1, 1), random.uniform(-1, 1)])
+                        array_for_random_offset[0,j,:] = w * alpha ** j * cur_R
+                        j +=1
+                        
                 # populate the offset array for comparison
                 source_window_index = np.repeat(diagonal_index.reshape(diagonal_length,1,2), while_iters+1, axis = 1)
                 random_offset = np.repeat(array_for_random_offset, diagonal_length, axis=0)          
